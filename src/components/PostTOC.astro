@@ -1,0 +1,76 @@
+---
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+interface Props {
+  headings: Heading[];
+}
+const { headings } = Astro.props;
+const items = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+---
+
+{items.length > 0 && (
+  <nav class="post-toc text-[13px]" aria-label="On this page">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-3">
+      On this page
+    </p>
+    <ul class="space-y-1.5">
+      {items.map((h) => (
+        <li class:list={[{ "pl-3": h.depth === 3 }]}>
+          <a
+            href={`#${h.slug}`}
+            data-toc-link={h.slug}
+            class="block text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] transition-colors leading-snug"
+          >
+            {h.text}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
+
+<style>
+  .post-toc :global(a.is-active) {
+    color: var(--color-fg);
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  function bindTOC() {
+    const links = document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]");
+    if (!links.length) return;
+
+    const ids = Array.from(links).map((a) => a.dataset.tocLink as string);
+    const targets = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (!targets.length) return;
+
+    const linkBySlug = new Map<string, HTMLAnchorElement>();
+    links.forEach((a) => {
+      const slug = a.dataset.tocLink;
+      if (slug) linkBySlug.set(slug, a);
+    });
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            links.forEach((a) => a.classList.remove("is-active"));
+            const link = linkBySlug.get(e.target.id);
+            link?.classList.add("is-active");
+          }
+        }
+      },
+      { rootMargin: "-30% 0px -60% 0px" }
+    );
+
+    targets.forEach((t) => io.observe(t));
+  }
+  bindTOC();
+  document.addEventListener("astro:after-swap", bindTOC);
+</script>

@@ -1,0 +1,123 @@
+---
+---
+
+<style is:global>
+  #intro {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    pointer-events: none;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+
+  .intro-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: #050505;
+    will-change: transform;
+  }
+  .intro-panel--top    { top:    0; }
+  .intro-panel--bottom { bottom: 0; }
+
+  .intro-name {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-sans);
+    font-size: clamp(3.5rem, 10vw, 7.5rem);
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    color: #fafafa;
+    opacity: 0;
+    transform: translateY(8px);
+    will-change: opacity, transform;
+  }
+  .intro-dot { color: var(--c-accent); }
+
+  #intro[data-state="reveal"] .intro-name {
+    animation: intro-name-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  #intro[data-state="exit"] .intro-name {
+    animation: intro-name-out 0.4s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+  }
+
+  #intro[data-state="exit"] .intro-panel--top {
+    animation: panel-up 1s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+  }
+  #intro[data-state="exit"] .intro-panel--bottom {
+    animation: panel-down 1s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+  }
+
+  @keyframes intro-name-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes intro-name-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes panel-up {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-101%); }
+  }
+  @keyframes panel-down {
+    from { transform: translateY(0); }
+    to   { transform: translateY(101%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #intro { display: none !important; }
+  }
+
+  body[data-intro="active"] { overflow: hidden; }
+</style>
+
+<script is:inline>
+  (() => {
+    if (window.__introRan) return;
+    window.__introRan = true;
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const seen = sessionStorage.getItem("intro-seen") === "1";
+    if (reduce || seen) return;
+
+    const intro = document.createElement("div");
+    intro.id = "intro";
+    intro.setAttribute("aria-hidden", "true");
+    intro.dataset.state = "initial";
+    intro.innerHTML =
+      '<div class="intro-panel intro-panel--top"></div>' +
+      '<div class="intro-panel intro-panel--bottom"></div>' +
+      '<span class="intro-name">oyoke<span class="intro-dot">.</span></span>';
+    document.body.appendChild(intro);
+    document.body.dataset.intro = "active";
+
+    const cleanup = () => {
+      intro.remove();
+      document.body.removeAttribute("data-intro");
+      sessionStorage.setItem("intro-seen", "1");
+    };
+
+    const start = () => {
+      intro.dataset.state = "reveal";
+      window.setTimeout(() => {
+        intro.dataset.state = "exit";
+        document.body.removeAttribute("data-intro");
+      }, 750);
+      window.setTimeout(cleanup, 1900);
+    };
+
+    if (document.fonts && document.fonts.ready) {
+      Promise.race([
+        document.fonts.ready,
+        new Promise((r) => window.setTimeout(r, 600)),
+      ]).then(start);
+    } else {
+      window.setTimeout(start, 100);
+    }
+  })();
+</script>

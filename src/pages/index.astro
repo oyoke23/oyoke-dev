@@ -1,0 +1,166 @@
+---
+import Base from "../layouts/Base.astro";
+import ScrollReveal from "../components/ScrollReveal.astro";
+import { getCollection } from "astro:content";
+import { getLangFromUrl, localizedPath, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const featuredProjects = (
+  await getCollection(
+    "projects",
+    ({ data }) => !data.draft && data.featured && data.lang === lang
+  )
+)
+  .sort((a, b) => +new Date(b.data.date) - +new Date(a.data.date))
+  .slice(0, 3);
+
+const recentPosts = (
+  await getCollection("blog", ({ data }) => !data.draft && data.lang === lang)
+)
+  .sort((a, b) => +new Date(b.data.date) - +new Date(a.data.date))
+  .slice(0, 3);
+
+const dateLocale = lang === "es" ? "es" : "en";
+---
+
+<Base>
+  <ScrollReveal />
+
+  <section class="mx-auto max-w-5xl px-6 pt-16 pb-24 md:pt-24 md:pb-32">
+    <div class="grid md:grid-cols-[1fr_180px] gap-10 items-start">
+      <div class="reveal">
+        <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-5">
+          <span class="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-accent)] mr-1.5 align-middle"></span>
+          {t("site.role")}
+        </p>
+
+        <h1 class="text-[clamp(2.5rem,6vw,4.5rem)] font-medium leading-[1.05] tracking-tight max-w-3xl text-balance">
+          {t("home.hero.intro")} <span class="text-[var(--color-accent)]">TODO</span>.
+          {t("home.hero.headline") || "TODO: headline"}
+        </h1>
+
+        <p
+          class="mt-6 max-w-xl text-[var(--color-fg-muted)] text-pretty"
+          set:html={t("home.hero.body") || "TODO: hero body"}
+        />
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a
+            href={localizedPath(lang, "/projects")}
+            class="inline-flex items-center gap-2 rounded-md bg-[var(--color-fg)] text-[var(--color-bg)] px-4 py-2 text-[13px] font-medium hover:opacity-90 transition-opacity"
+          >
+            {t("home.hero.cta.projects")} <span aria-hidden>→</span>
+          </a>
+          <a
+            href={localizedPath(lang, "/contact")}
+            class="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong)] px-4 py-2 text-[13px] font-medium hover:border-[var(--color-fg)] transition-colors"
+          >
+            {t("home.hero.cta.contact")}
+          </a>
+        </div>
+      </div>
+
+      <div class="hidden md:block reveal">
+        <div class="aspect-square w-[180px] rounded-2xl bg-[var(--color-bg-elev)] border border-[var(--color-border)] grid place-items-center text-[var(--color-fg-subtle)] text-[11px] font-mono uppercase tracking-[0.15em]">
+          {t("about.photo.placeholder")}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 pb-20">
+    <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] px-6 py-5 reveal">
+      <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-2">
+        {t("home.now.label")}
+      </p>
+      <p
+        class="text-[15px] text-pretty"
+        set:html={t("home.now.body") || "TODO: now body"}
+      />
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-12">
+    <div class="flex items-end justify-between mb-8 reveal">
+      <div>
+        <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-2">
+          {t("home.work.label")}
+        </p>
+        <h2 class="text-2xl md:text-3xl font-medium tracking-tight">{t("home.work.title")}</h2>
+      </div>
+      <a
+        href={localizedPath(lang, "/projects")}
+        class="hidden sm:inline-flex underline-animate text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+      >
+        {t("home.work.all")}
+      </a>
+    </div>
+
+    <div class="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+      {featuredProjects.length === 0 && (
+        <p class="py-6 text-[var(--color-fg-muted)] text-[14px]">{t("home.work.empty")}</p>
+      )}
+      {featuredProjects.map((p, i) => (
+        <a
+          href={localizedPath(lang, `/projects/${p.data.slug}`)}
+          class="group grid grid-cols-12 gap-4 py-5 items-baseline hover:bg-[var(--color-bg-elev)]/50 px-2 -mx-2 rounded-md transition-colors reveal"
+        >
+          <span class="col-span-1 font-mono text-[11px] text-[var(--color-fg-subtle)]">
+            {String(i + 1).padStart(2, "0")}
+          </span>
+          <span class="col-span-11 sm:col-span-5 font-medium">{p.data.title}</span>
+          <span class="col-span-12 sm:col-span-5 text-[13px] text-[var(--color-fg-muted)]">
+            {p.data.summary}
+          </span>
+          <span class="col-span-12 sm:col-span-1 text-right text-xs font-mono text-[var(--color-fg-subtle)] group-hover:text-[var(--color-accent)] transition-colors">
+            →
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  {recentPosts.length > 0 && (
+    <section class="mx-auto max-w-5xl px-6 py-12">
+      <div class="flex items-end justify-between mb-8 reveal">
+        <div>
+          <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-2">
+            {t("home.blog.label")}
+          </p>
+          <h2 class="text-2xl md:text-3xl font-medium tracking-tight">{t("home.blog.title")}</h2>
+        </div>
+        <a
+          href={localizedPath(lang, "/blog")}
+          class="hidden sm:inline-flex underline-animate text-[13px] text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+        >
+          {t("home.blog.all")}
+        </a>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-3">
+        {recentPosts.map((p) => (
+          <a
+            href={localizedPath(lang, `/blog/${p.data.slug}`)}
+            class="group block rounded-xl border border-[var(--color-border)] p-5 hover:border-[var(--color-fg)] transition-colors reveal"
+          >
+            <p class="font-mono text-[11px] text-[var(--color-fg-subtle)] mb-3">
+              {new Date(p.data.date).toLocaleDateString(dateLocale, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </p>
+            <h3 class="text-[15px] font-medium text-balance group-hover:text-[var(--color-accent)] transition-colors">
+              {p.data.title}
+            </h3>
+            <p class="mt-2 text-[13px] text-[var(--color-fg-muted)] line-clamp-3">
+              {p.data.summary}
+            </p>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+</Base>

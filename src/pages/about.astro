@@ -1,0 +1,80 @@
+---
+import Base from "../layouts/Base.astro";
+import ScrollReveal from "../components/ScrollReveal.astro";
+import { site } from "../lib/site";
+import { getLangFromUrl, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+type TimelineEntry = { year: string; title: string; note: string };
+
+const timelineEn: TimelineEntry[] = [];
+const timelineEs: TimelineEntry[] = [];
+
+const timeline = lang === "es" ? timelineEs : timelineEn;
+---
+
+<Base title={t("nav.about")} description={t("site.tagline")}>
+  <ScrollReveal />
+
+  <section class="mx-auto max-w-3xl px-6 pt-12 pb-12">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4 reveal">
+      {t("about.label")}
+    </p>
+    <h1
+      class="text-4xl md:text-5xl font-medium tracking-tight reveal"
+      set:html={t("about.headline", {
+        name: '<span class="text-[var(--color-accent)]">Kevin</span>',
+      })}
+    />
+    <p class="mt-2 font-mono text-[12px] text-[var(--color-fg-subtle)] reveal">
+      <span class="text-[var(--color-fg-muted)]">oyoke</span> {lang === "es" ? "en internet" : "online"}.
+    </p>
+
+    <div class="mt-8 grid md:grid-cols-[1fr_180px] gap-8 items-start">
+      <div class="space-y-4 text-[15px] text-[var(--color-fg-muted)] text-pretty reveal">
+        <p set:html={t("about.bio")} />
+      </div>
+
+      <div class="reveal">
+        <div class="aspect-square w-[180px] rounded-2xl bg-[var(--color-bg-elev)] border border-[var(--color-border)] grid place-items-center text-[var(--color-fg-subtle)] text-[11px] font-mono uppercase tracking-[0.15em]">
+          {t("about.photo.placeholder")}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-6 py-12">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-6 reveal">
+      {t("about.timeline.label")}
+    </p>
+    <ol class="border-l border-[var(--color-border)] pl-6 space-y-7">
+      {timeline.map((item) => (
+        <li class="relative reveal">
+          <span class="absolute -left-[31px] top-2 h-2 w-2 rounded-full bg-[var(--color-accent)]"></span>
+          <p class="font-mono text-[11px] text-[var(--color-fg-subtle)]">{item.year}</p>
+          <p class="text-[16px] font-medium mt-1">{item.title}</p>
+          <p class="text-[13px] text-[var(--color-fg-muted)] mt-1">{item.note}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-6 py-12 reveal">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4">
+      {t("about.contact.label")}
+    </p>
+    <h2 class="text-2xl md:text-3xl font-medium tracking-tight">
+      {t("about.contact.headline")}
+    </h2>
+    {site.author.email && (
+      <a
+        href={`mailto:${site.author.email}`}
+        class="inline-flex items-center gap-2 mt-6 rounded-md bg-[var(--color-fg)] text-[var(--color-bg)] px-4 py-2 text-[13px] font-medium"
+      >
+        {site.author.email} →
+      </a>
+    )}
+  </section>
+</Base>

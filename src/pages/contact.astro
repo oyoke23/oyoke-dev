@@ -1,0 +1,199 @@
+---
+import Base from "../layouts/Base.astro";
+import ScrollReveal from "../components/ScrollReveal.astro";
+import { site } from "../lib/site";
+import { getLangFromUrl, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<Base title={t("nav.contact")} description={t("contact.body")}>
+  <ScrollReveal />
+
+  <section class="mx-auto max-w-2xl px-6 pt-12 pb-12">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4 reveal">
+      {t("contact.label")}
+    </p>
+    <h1 class="text-4xl md:text-5xl font-medium tracking-tight reveal">
+      {t("contact.headline")}
+    </h1>
+    <p class="mt-4 text-[15px] text-[var(--color-fg-muted)] text-pretty reveal">
+      {t("contact.body")}
+    </p>
+
+    {site.author.email && (
+      <p class="mt-6 text-[13px] reveal">
+        <a
+          href={`mailto:${site.author.email}`}
+          class="inline-flex items-center gap-2 underline-animate"
+        >
+          ↗ {site.author.email}
+        </a>
+      </p>
+    )}
+  </section>
+
+  <section class="mx-auto max-w-2xl px-6 pb-32">
+    <form
+      id="contact-form"
+      class="space-y-5 reveal"
+      method="POST"
+      action="/api/contact"
+      data-lang={lang}
+      data-label-sending={t("contact.form.sending")}
+      data-label-success={t("contact.form.success")}
+      data-label-error={t("contact.form.error")}
+      data-label-invalid={t("contact.form.invalid")}
+      data-label-ratelimited={t("contact.form.ratelimited")}
+      data-label-submit={t("contact.form.submit")}
+      data-label-submit-sending={t("contact.form.submit.sending")}
+    >
+      <input type="hidden" name="lang" value={lang} />
+
+      <div style="position: absolute; left: -9999px;" aria-hidden="true">
+        <label>
+          {t("contact.form.honeypot")}
+          <input type="text" name="company" tabindex="-1" autocomplete="off" />
+        </label>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-5">
+        <label class="block">
+          <span class="block text-[12px] font-medium mb-1.5">{t("contact.form.name")}</span>
+          <input
+            type="text"
+            name="name"
+            required
+            class="w-full rounded-md border border-[var(--color-border-strong)] bg-[var(--color-bg)] px-3 py-2 text-[14px] focus:border-[var(--color-fg)] focus:outline-none transition-colors"
+          />
+        </label>
+        <label class="block">
+          <span class="block text-[12px] font-medium mb-1.5">{t("contact.form.email")}</span>
+          <input
+            type="email"
+            name="email"
+            required
+            class="w-full rounded-md border border-[var(--color-border-strong)] bg-[var(--color-bg)] px-3 py-2 text-[14px] focus:border-[var(--color-fg)] focus:outline-none transition-colors"
+          />
+        </label>
+      </div>
+
+      <label class="block">
+        <span class="block text-[12px] font-medium mb-1.5">{t("contact.form.subject")}</span>
+        <input
+          type="text"
+          name="subject"
+          required
+          class="w-full rounded-md border border-[var(--color-border-strong)] bg-[var(--color-bg)] px-3 py-2 text-[14px] focus:border-[var(--color-fg)] focus:outline-none transition-colors"
+        />
+      </label>
+
+      <label class="block">
+        <span class="block text-[12px] font-medium mb-1.5">{t("contact.form.message")}</span>
+        <textarea
+          name="message"
+          required
+          rows="6"
+          class="w-full rounded-md border border-[var(--color-border-strong)] bg-[var(--color-bg)] px-3 py-2 text-[14px] focus:border-[var(--color-fg)] focus:outline-none transition-colors resize-y"
+        ></textarea>
+      </label>
+
+      <div class="flex items-center justify-between gap-4">
+        <p
+          id="contact-status"
+          class="text-[13px] text-[var(--color-fg-muted)]"
+          aria-live="polite"
+          data-state=""
+        ></p>
+        <button
+          type="submit"
+          class="inline-flex items-center gap-2 rounded-md bg-[var(--color-fg)] text-[var(--color-bg)] px-5 py-2 text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          <span data-submit-label>{t("contact.form.submit")}</span>
+        </button>
+      </div>
+    </form>
+  </section>
+</Base>
+
+<script>
+  function bindContact() {
+    const form = document.getElementById("contact-form") as HTMLFormElement | null;
+    const status = document.getElementById("contact-status");
+    if (!form || !status) return;
+    if (form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
+
+    const button = form.querySelector("button[type=submit]") as HTMLButtonElement | null;
+    const submitLabel = form.querySelector("[data-submit-label]") as HTMLElement | null;
+
+    const labels = {
+      sending: form.dataset.labelSending ?? "Sending…",
+      success: form.dataset.labelSuccess ?? "Sent.",
+      error: form.dataset.labelError ?? "Something went wrong.",
+      invalid: form.dataset.labelInvalid ?? "Please fill in all fields.",
+      ratelimited: form.dataset.labelRatelimited ?? "Too many requests.",
+      submit: form.dataset.labelSubmit ?? "Send",
+      submitSending: form.dataset.labelSubmitSending ?? "Sending…",
+    };
+
+    function setStatus(state: "idle" | "sending" | "success" | "error", text = "") {
+      if (!status) return;
+      status.dataset.state = state;
+      status.textContent = text;
+      const color =
+        state === "success"
+          ? "var(--color-accent)"
+          : state === "error"
+            ? "#ef4444"
+            : "var(--color-fg-muted)";
+      status.style.color = color;
+    }
+
+    function setSending(sending: boolean) {
+      if (!button || !submitLabel) return;
+      button.disabled = sending;
+      submitLabel.textContent = sending ? labels.submitSending : labels.submit;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setStatus("sending", labels.sending);
+      setSending(true);
+
+      try {
+        const formData = new FormData(form);
+        const res = await fetch(form.action, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: formData,
+        });
+
+        const data = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          error?: string;
+          message?: string;
+        };
+
+        if (res.ok && data.ok) {
+          setStatus("success", data.message ?? labels.success);
+          form.reset();
+        } else if (res.status === 429) {
+          setStatus("error", data.error ?? labels.ratelimited);
+        } else if (res.status === 400) {
+          setStatus("error", data.error ?? labels.invalid);
+        } else {
+          setStatus("error", data.error ?? labels.error);
+        }
+      } catch {
+        setStatus("error", labels.error);
+      } finally {
+        setSending(false);
+      }
+    });
+  }
+
+  bindContact();
+  document.addEventListener("astro:after-swap", bindContact);
+</script>

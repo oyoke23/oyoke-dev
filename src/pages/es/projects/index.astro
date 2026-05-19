@@ -1,0 +1,59 @@
+---
+import Base from "../../../layouts/Base.astro";
+import ScrollReveal from "../../../components/ScrollReveal.astro";
+import { getCollection } from "astro:content";
+import { getLangFromUrl, localizedPath, useTranslations } from "../../../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const projects = (
+  await getCollection("projects", ({ data }) => !data.draft && data.lang === lang)
+).sort((a, b) => +new Date(b.data.date) - +new Date(a.data.date));
+---
+
+<Base title={t("nav.projects")} description={t("projects.body")}>
+  <ScrollReveal />
+
+  <section class="mx-auto max-w-5xl px-6 pt-12 pb-10">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4 reveal">
+      {t("projects.label")}
+    </p>
+    <h1 class="text-4xl md:text-5xl font-medium tracking-tight reveal">{t("projects.headline")}</h1>
+    <p class="mt-4 max-w-xl text-[15px] text-[var(--color-fg-muted)] text-pretty reveal">
+      {t("projects.body")}
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 pb-32">
+    <ul class="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+      {projects.length === 0 && (
+        <li class="py-10 text-[var(--color-fg-muted)] text-[14px]">{t("projects.empty")}</li>
+      )}
+      {projects.map((p, i) => (
+        <li>
+          <a
+            href={localizedPath(lang, `/projects/${p.data.slug}`)}
+            class="group grid grid-cols-12 gap-4 py-6 items-baseline hover:bg-[var(--color-bg-elev)]/50 px-2 -mx-2 rounded-md transition-colors reveal"
+          >
+            <span class="col-span-2 sm:col-span-1 font-mono text-[11px] text-[var(--color-fg-subtle)]">
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <div class="col-span-10 sm:col-span-7">
+              <h2 class="text-xl md:text-2xl font-medium tracking-tight">{p.data.title}</h2>
+              <p class="mt-1 text-[14px] text-[var(--color-fg-muted)]">{p.data.summary}</p>
+            </div>
+            <span class="col-span-8 sm:col-span-3 text-[11px] font-mono text-[var(--color-fg-subtle)] flex flex-wrap gap-x-2 gap-y-1">
+              {p.data.stack.slice(0, 4).map((s) => (
+                <span>#{s}</span>
+              ))}
+            </span>
+            <span class="col-span-4 sm:col-span-1 text-right text-[11px] font-mono text-[var(--color-fg-subtle)] group-hover:text-[var(--color-accent)] transition-colors">
+              {new Date(p.data.date).getFullYear()} →
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Base>

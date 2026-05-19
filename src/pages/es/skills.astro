@@ -1,0 +1,140 @@
+---
+import Base from "../../layouts/Base.astro";
+import ScrollReveal from "../../components/ScrollReveal.astro";
+import SkillIcon from "../../components/SkillIcon.astro";
+import { getLangFromUrl, useTranslations } from "../../i18n/utils";
+import type { UIKey } from "../../i18n/ui";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+type Skill = { icon: string; name: string };
+type Category = { labelKey: UIKey; items: Skill[] };
+
+const capabilities: Category[] = [
+  {
+    labelKey: "skills.cat.languages",
+    items: [
+      { icon: "logos:typescript", name: "TypeScript" },
+      { icon: "logos:javascript", name: "JavaScript" },
+      { icon: "logos:python", name: "Python" },
+      { icon: "logos:postgresql", name: "SQL" },
+    ],
+  },
+  {
+    labelKey: "skills.cat.frontend",
+    items: [
+      { icon: "logos:nextjs", name: "Next.js" },
+      { icon: "logos:react", name: "React" },
+      { icon: "logos:astro", name: "Astro" },
+      { icon: "logos:tailwindcss-icon", name: "Tailwind CSS" },
+    ],
+  },
+  {
+    labelKey: "skills.cat.backend",
+    items: [
+      { icon: "logos:nodejs", name: "Node.js" },
+      { icon: "logos:aws-lambda", name: "AWS Lambda" },
+      { icon: "simple-icons:amazons3", name: "Amazon S3" },
+      { icon: "simple-icons:amazonsqs", name: "Amazon SQS" },
+      { icon: "logos:docker", name: "Docker" },
+      { icon: "logos:vercel", name: "Vercel" },
+      { icon: "simple-icons:railway", name: "Railway" },
+    ],
+  },
+  {
+    labelKey: "skills.cat.data",
+    items: [
+      { icon: "logos:postgresql", name: "PostgreSQL" },
+      { icon: "logos:prisma", name: "Prisma" },
+      { icon: "logos:stripe", name: "Stripe" },
+    ],
+  },
+  {
+    labelKey: "skills.cat.ai",
+    items: [
+      { icon: "logos:anthropic-icon", name: "Claude" },
+      { icon: "logos:google-gemini", name: "Gemini" },
+      { icon: "logos:openai-icon", name: "OpenAI" },
+    ],
+  },
+  {
+    labelKey: "skills.cat.realtime",
+    items: [
+      { icon: "simple-icons:livekit", name: "LiveKit" },
+      { icon: "simple-icons:deepgram", name: "Deepgram" },
+      { icon: "logos:microsoft-azure", name: "Azure" },
+      { icon: "logos:puppeteer", name: "Puppeteer" },
+    ],
+  },
+  {
+    labelKey: "skills.cat.integrations",
+    items: [
+      { icon: "logos:linkedin", name: "LinkedIn" },
+      { icon: "simple-icons:brevo", name: "Brevo" },
+      { icon: "logos:posthog", name: "PostHog" },
+      { icon: "logos:mixpanel", name: "Mixpanel" },
+    ],
+  },
+  {
+    labelKey: "skills.cat.browser",
+    items: [{ icon: "logos:chrome", name: "Chrome MV3" }],
+  },
+  {
+    labelKey: "skills.cat.tooling",
+    items: [
+      { icon: "logos:visual-studio-code", name: "VS Code" },
+      { icon: "logos:claude", name: "Claude Code" },
+      { icon: "simple-icons:biome", name: "Biome" },
+      { icon: "logos:vitest", name: "Vitest" },
+      { icon: "logos:notion-icon", name: "Notion" },
+      { icon: "logos:figma", name: "Figma" },
+    ],
+  },
+];
+
+---
+
+<Base title={t("nav.skills")} description={t("skills.body")}>
+  <ScrollReveal />
+
+  <section class="mx-auto max-w-3xl px-6 pt-12 pb-12">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4 reveal">
+      {t("skills.label")}
+    </p>
+    <h1 class="text-4xl md:text-5xl font-medium tracking-tight reveal">
+      {t("skills.headline")}
+    </h1>
+    <p class="mt-4 text-[15px] text-[var(--color-fg-muted)] text-pretty reveal">
+      {t("skills.body")}
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-6 py-8">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-6 reveal">
+      {t("skills.capabilities.label")}
+    </p>
+
+    <div class="space-y-10">
+      {capabilities.map((c) => (
+        <div class="reveal">
+          <h3 class="text-[13px] font-mono uppercase tracking-[0.1em] text-[var(--color-fg-subtle)] mb-4">
+            {t(c.labelKey)}
+          </h3>
+          {c.items.length === 0 ? (
+            <div class="rounded-md border border-dashed border-[var(--color-border)] px-4 py-3 text-[12px] font-mono text-[var(--color-fg-subtle)]">
+              TODO
+            </div>
+          ) : (
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+              {c.items.map((s) => (
+                <SkillIcon icon={s.icon} name={s.name} />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+    </div>
+  </section>
+</Base>

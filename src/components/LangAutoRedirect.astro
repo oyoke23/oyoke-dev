@@ -1,0 +1,35 @@
+---
+---
+
+<script is:inline>
+  (() => {
+    try {
+      const KEY = "oyoke-lang-pref";
+      const stored = localStorage.getItem(KEY);
+      const path = window.location.pathname;
+      const isOnEs = path === "/es" || path.startsWith("/es/");
+      const isOnEn = !isOnEs;
+
+      if (stored === "en" && isOnEs) {
+        const target = path.replace(/^\/es\/?/, "/") || "/";
+        window.location.replace(target + window.location.search + window.location.hash);
+        return;
+      }
+      if (stored === "es" && isOnEn) {
+        const target = path === "/" ? "/es/" : "/es" + path;
+        window.location.replace(target + window.location.search + window.location.hash);
+        return;
+      }
+
+      if (!stored && isOnEn) {
+        const langs = navigator.languages || [navigator.language || ""];
+        const prefersEs = langs.some((l) => /^es\b/i.test(l));
+        if (prefersEs) {
+          localStorage.setItem(KEY, "es");
+          const target = path === "/" ? "/es/" : "/es" + path;
+          window.location.replace(target + window.location.search + window.location.hash);
+        }
+      }
+    } catch (_) {}
+  })();
+</script>

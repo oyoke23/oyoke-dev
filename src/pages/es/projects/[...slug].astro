@@ -1,0 +1,156 @@
+---
+import Base from "../../../layouts/Base.astro";
+import ScrollReveal from "../../../components/ScrollReveal.astro";
+import { getCollection, render } from "astro:content";
+import { marked } from "marked";
+import { getRepoData, rewriteReadmeImages, relativeTime } from "../../../lib/github";
+import { getLangFromUrl, localizedPath, useTranslations } from "../../../i18n/utils";
+
+export async function getStaticPaths() {
+  const projects = await getCollection("projects", ({ data }) => data.lang === "es");
+  return projects.map((p) => ({ params: { slug: p.data.slug }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const repo = project.data.repo;
+const showReadme = project.data.showReadme && !!repo;
+
+let repoMeta = null;
+let readmeHtml: string | null = null;
+
+if (repo) {
+  const data = await getRepoData(repo);
+  repoMeta = data.meta;
+  if (showReadme && data.readmeMd) {
+    const rewritten = rewriteReadmeImages(data.readmeMd, repo);
+    readmeHtml = await marked.parse(rewritten);
+  }
+}
+
+const formattedDate = new Date(project.data.date).toLocaleDateString("es", {
+  year: "numeric",
+  month: "long",
+});
+---
+
+<Base
+  title={project.data.title}
+  description={project.data.summary}
+  image={`/og/projects/${project.data.slug}.png`}
+  article
+  publishedTime={project.data.date.toISOString()}
+>
+  <ScrollReveal />
+
+  <article class="mx-auto max-w-3xl px-6 pt-10 pb-32" data-pagefind-body>
+    <a
+      href={localizedPath(lang, "/projects")}
+      class="font-mono text-[11px] text-[var(--color-fg-subtle)] underline-animate inline-block mb-8"
+    >
+      {t("projects.back")}
+    </a>
+
+    <header class="reveal">
+      <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-3">
+        {formattedDate}
+      </p>
+      <h1 class="text-4xl md:text-5xl font-medium tracking-tight text-balance">
+        {project.data.title}
+      </h1>
+      <p class="mt-4 text-[16px] text-[var(--color-fg-muted)] text-pretty max-w-2xl">
+        {project.data.summary}
+      </p>
+
+      <div class="mt-6 flex flex-wrap gap-3">
+        {repoMeta && (
+          <a
+            href={repoMeta.htmlUrl}
+            target="_blank"
+            rel="noreferrer"
+            class="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong)] px-3.5 py-1.5 text-[13px] font-medium hover:border-[var(--color-fg)] transition-colors"
+          >
+            {t("projects.github")}
+          </a>
+        )}
+        {project.data.url && (
+          <a
+            href={project.data.url}
+            target="_blank"
+            rel="noreferrer"
+            class="inline-flex items-center gap-2 rounded-md bg-[var(--color-fg)] text-[var(--color-bg)] px-3.5 py-1.5 text-[13px] font-medium"
+          >
+            {t("projects.demo")}
+          </a>
+        )}
+        {project.data.post && (
+          <a
+            href={localizedPath(lang, `/blog/${project.data.post}`)}
+            class="inline-flex items-center gap-2 rounded-md border border-[var(--color-border-strong)] px-3.5 py-1.5 text-[13px] font-medium hover:border-[var(--color-fg)] transition-colors"
+          >
+            {t("projects.buildlog")}
+          </a>
+        )}
+      </div>
+
+      {repoMeta && (
+        <div class="mt-6 flex flex-wrap items-center gap-4 text-[12px] font-mono text-[var(--color-fg-subtle)]">
+          {repoMeta.language && (
+            <span class="inline-flex items-center gap-1.5">
+              <span class="inline-block h-2 w-2 rounded-full bg-[var(--color-accent)]"></span>
+              {repoMeta.language}
+            </span>
+          )}
+          <span>★ {repoMeta.stars}</span>
+          <span>⑂ {repoMeta.forks}</span>
+          {repoMeta.pushedAt && (
+            <span>{t("projects.last.push", { time: relativeTime(repoMeta.pushedAt) })}</span>
+          )}
+        </div>
+      )}
+
+      {project.data.stack.length > 0 && (
+        <div class="mt-5 flex flex-wrap gap-2">
+          {project.data.stack.map((s) => (
+            <span class="font-mono text-[11px] px-2.5 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-fg-muted)]">
+              {s}
+            </span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    {readmeHtml ? (
+      <section class="mt-12 reveal">
+        <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4">
+          {t("projects.readme.label", { repo: repo as string })}
+        </p>
+        <div class="prose-md" set:html={readmeHtml}></div>
+      </section>
+    ) : (
+      <section class="mt-12 prose-md reveal">
+        <Content />
+      </section>
+    )}
+
+    {repoMeta && (
+      <section class="mt-16 pt-8 border-t border-[var(--color-border)] reveal">
+        <p class="text-[14px] text-[var(--color-fg-muted)]">
+          {t("projects.more")}{" "}
+          <a
+            href={repoMeta.htmlUrl}
+            target="_blank"
+            rel="noreferrer"
+            class="text-[var(--color-fg)] underline"
+          >
+            {t("projects.more.link")}
+          </a>
+        </p>
+      </section>
+    )}
+  </article>
+</Base>

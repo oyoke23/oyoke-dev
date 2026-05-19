@@ -1,0 +1,63 @@
+---
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+import { Font } from "astro:assets";
+import SEO from "../components/SEO.astro";
+import ThemeScript from "../components/ThemeScript.astro";
+import LangAutoRedirect from "../components/LangAutoRedirect.astro";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import Intro from "../components/Intro.astro";
+import { getLangFromUrl } from "../i18n/utils";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  article?: boolean;
+  publishedTime?: string;
+  showFooter?: boolean;
+}
+
+const {
+  title,
+  description,
+  image,
+  article,
+  publishedTime,
+  showFooter = true,
+} = Astro.props;
+
+const lang = getLangFromUrl(Astro.url);
+const rssTitle = lang === "es" ? "oyoke — blog" : "oyoke — blog";
+const rssHref = lang === "es" ? "/es/rss.xml" : "/rss.xml";
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="alternate" type="application/rss+xml" title={rssTitle} href={rssHref} />
+
+    <LangAutoRedirect />
+
+    <Font cssVariable="--font-geist" preload />
+    <Font cssVariable="--font-geist-mono" />
+
+    <ThemeScript />
+    <SEO {title} {description} {image} {article} {publishedTime} />
+    <ClientRouter />
+  </head>
+  <body class="min-h-screen antialiased">
+    <Intro />
+    <Nav />
+    <main class="pt-20">
+      <slot />
+    </main>
+    {showFooter && <Footer />}
+  </body>
+</html>

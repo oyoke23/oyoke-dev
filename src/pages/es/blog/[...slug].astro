@@ -1,0 +1,167 @@
+---
+import Base from "../../../layouts/Base.astro";
+import ScrollReveal from "../../../components/ScrollReveal.astro";
+import PostTOC from "../../../components/PostTOC.astro";
+import { getCollection, render } from "astro:content";
+import { site } from "../../../lib/site";
+import { getLangFromUrl, localizedPath, useTranslations } from "../../../i18n/utils";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog", ({ data }) => data.lang === "es");
+  return posts.map((p) => ({ params: { slug: p.data.slug }, props: { post: p } }));
+}
+
+const { post } = Astro.props;
+const { Content, headings, remarkPluginFrontmatter } = await render(post);
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const date = new Date(post.data.date).toLocaleDateString("es", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+const updated = post.data.updated
+  ? new Date(post.data.updated).toLocaleDateString("es", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  : null;
+
+const readingTime = post.data.readingTime ?? remarkPluginFrontmatter?.readingTime;
+
+const allPosts = (
+  await getCollection("blog", ({ data }) => !data.draft && data.lang === "es")
+).filter((p) => p.data.slug !== post.data.slug);
+
+const related = allPosts
+  .filter((p) => p.data.tags.some((t) => post.data.tags.includes(t)))
+  .sort((a, b) => +new Date(b.data.date) - +new Date(a.data.date))
+  .slice(0, 2);
+---
+
+<Base
+  title={post.data.title}
+  description={post.data.summary}
+  image={`/og/blog/${post.data.slug}.png`}
+  article
+  publishedTime={post.data.date.toISOString()}
+>
+  <ScrollReveal />
+
+  <article class="mx-auto max-w-6xl px-6 pt-10 pb-32" data-pagefind-body>
+    <a
+      href={localizedPath(lang, "/blog")}
+      class="font-mono text-[11px] text-[var(--color-fg-subtle)] underline-animate inline-block mb-8"
+    >
+      {t("blog.back")}
+    </a>
+
+    <header class="max-w-3xl reveal">
+      {updated && (
+        <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-[var(--color-fg-subtle)] mb-1">
+          {t("blog.updated", { date: updated })}
+        </p>
+      )}
+      <p class="text-[13px] text-[var(--color-fg-subtle)] mb-3">
+        {date}
+        {readingTime ? ` · ${readingTime}` : ""}
+      </p>
+      <h1 class="text-3xl md:text-5xl font-medium tracking-tight text-balance leading-[1.1]">
+        {post.data.title}
+      </h1>
+      <p class="mt-4 text-[16px] text-[var(--color-fg-muted)] text-pretty">
+        {post.data.summary}
+      </p>
+
+      <div class="mt-6 flex items-center gap-3 text-[13px] text-[var(--color-fg-muted)]">
+        <span class="inline-block h-7 w-7 rounded-full bg-[var(--color-bg-elev)] border border-[var(--color-border)] grid place-items-center text-[10px] font-mono text-[var(--color-fg-subtle)]">
+          k
+        </span>
+        <span>{site.author.name}</span>
+      </div>
+    </header>
+
+    <div class="mt-12 grid lg:grid-cols-[220px_1fr] gap-12 items-start">
+      <aside class="hidden lg:block sticky top-24 self-start">
+        <PostTOC headings={headings} />
+      </aside>
+
+      <div class="max-w-3xl">
+        <div class="prose-md reveal">
+          <Content />
+        </div>
+
+        {(post.data.repo || post.data.project) && (
+          <div class="mt-14 p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elev)]">
+            {post.data.repo && (
+              <>
+                <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-2">
+                  {t("blog.code.label")}
+                </p>
+                <a
+                  href={`https://github.com/${post.data.repo}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  class="inline-flex items-center gap-2 text-[15px] font-medium underline-animate"
+                >
+                  ↗ {post.data.repo}
+                </a>
+              </>
+            )}
+            {post.data.project && (
+              <a
+                href={localizedPath(lang, `/projects/${post.data.project}`)}
+                class="block mt-3 text-[13px] underline-animate text-[var(--color-fg-muted)]"
+              >
+                {t("blog.project.link")}
+              </a>
+            )}
+          </div>
+        )}
+
+        {post.data.tags.length > 0 && (
+          <div class="mt-12 flex flex-wrap gap-2">
+            {post.data.tags.map((tag) => (
+              <span class="font-mono text-[11px] px-2.5 py-1 rounded-full border border-[var(--color-border)] text-[var(--color-fg-muted)]">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {related.length > 0 && (
+          <section class="mt-16 pt-10 border-t border-[var(--color-border)]">
+            <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4">
+              {t("blog.related.label")}
+            </p>
+            <div class="grid sm:grid-cols-2 gap-4">
+              {related.map((r) => (
+                <a
+                  href={localizedPath(lang, `/blog/${r.data.slug}`)}
+                  class="group block rounded-xl border border-[var(--color-border)] p-5 hover:border-[var(--color-fg)] transition-colors"
+                >
+                  <p class="font-mono text-[11px] text-[var(--color-fg-subtle)] mb-2">
+                    {new Date(r.data.date).toLocaleDateString("es", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <h3 class="text-[15px] font-medium text-balance group-hover:text-[var(--color-accent)] transition-colors">
+                    {r.data.title}
+                  </h3>
+                  <p class="mt-2 text-[13px] text-[var(--color-fg-muted)] line-clamp-2">
+                    {r.data.summary}
+                  </p>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
+  </article>
+</Base>

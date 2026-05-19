@@ -1,0 +1,42 @@
+---
+import Base from "../layouts/Base.astro";
+import { getLangFromUrl, localizedPath, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<Base title={t("404.headline")} description={t("404.body")}>
+  <section class="mx-auto max-w-2xl px-6 pt-24 pb-32 min-h-[60vh]">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4">
+      {t("404.label")}
+    </p>
+    <h1 class="text-5xl md:text-7xl font-medium tracking-tight leading-none">
+      {t("404.headline")}
+    </h1>
+    <p class="mt-6 text-[15px] text-[var(--color-fg-muted)] max-w-md">
+      {t("404.body")}
+    </p>
+
+    <ul class="mt-8 space-y-2 text-[14px]">
+      <li>
+        <a href={localizedPath(lang, "/")} class="underline-animate">→ {t("nav.home")}</a>
+      </li>
+      <li>
+        <a href={localizedPath(lang, "/projects")} class="underline-animate">→ {t("nav.projects")}</a>
+      </li>
+      <li>
+        <a href={localizedPath(lang, "/blog")} class="underline-animate">→ {t("nav.blog")}</a>
+      </li>
+      <li>
+        <a href={localizedPath(lang, "/contact")} class="underline-animate">→ {t("nav.contact")}</a>
+      </li>
+    </ul>
+
+    <pre class="mt-12 font-mono text-[11px] text-[var(--color-fg-subtle)] leading-tight">
+{`HTTP/1.1 404 Not Found
+Content-Type: text/plain
+X-Powered-By: ☕ + curiosity`}
+    </pre>
+  </section>
+</Base>

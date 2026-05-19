@@ -1,0 +1,190 @@
+---
+import { getLangFromUrl, useTranslations } from "../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const labels = {
+  trigger: lang === "es" ? "Buscar" : "Search",
+  placeholder: lang === "es" ? "Buscar en el sitio…" : "Search the site…",
+  empty:
+    lang === "es"
+      ? "Empieza a escribir para buscar entradas y proyectos."
+      : "Start typing to search posts and projects.",
+  nomatch: lang === "es" ? "Sin resultados." : "No matches.",
+  loading: lang === "es" ? "Cargando índice de búsqueda…" : "Search index loading…",
+  untitled: lang === "es" ? "Sin título" : "Untitled",
+  open: lang === "es" ? "Abrir búsqueda" : "Open search",
+};
+---
+
+<button
+  type="button"
+  id="search-trigger"
+  aria-label={labels.open}
+  class="hidden md:inline-flex items-center gap-3 px-3 py-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elev)] text-xs text-[var(--color-fg-subtle)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-fg-muted)] transition-colors"
+>
+  <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+  <span>{labels.trigger}</span>
+  <kbd class="font-mono text-[10px] px-1.5 py-0.5 rounded border border-[var(--color-border)] text-[var(--color-fg-subtle)]">/</kbd>
+</button>
+
+<dialog
+  id="search-dialog"
+  aria-label={t("nav.contact") /* fallback */}
+  data-empty-label={labels.empty}
+  data-nomatch-label={labels.nomatch}
+  data-loading-label={labels.loading}
+  data-untitled-label={labels.untitled}
+  class="fixed inset-0 m-0 max-w-none max-h-none w-full h-full bg-[var(--color-bg)]/80 backdrop-blur-md p-0 [&::backdrop]:bg-transparent open:flex items-start justify-center"
+>
+  <div class="w-full max-w-2xl mx-6 mt-[12vh] rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elev)] shadow-2xl overflow-hidden">
+    <form id="search-form" class="flex items-center gap-3 px-5 py-4 border-b border-[var(--color-border)]">
+      <svg class="h-4 w-4 text-[var(--color-fg-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+      <input
+        type="search"
+        id="search-input"
+        placeholder={labels.placeholder}
+        autocomplete="off"
+        class="flex-1 bg-transparent border-0 outline-none text-base text-[var(--color-fg)] placeholder:text-[var(--color-fg-subtle)]"
+      />
+      <kbd class="font-mono text-[10px] px-1.5 py-0.5 rounded border border-[var(--color-border)] text-[var(--color-fg-subtle)]">esc</kbd>
+    </form>
+
+    <div id="search-results" class="max-h-[60vh] overflow-y-auto p-2">
+      <p id="search-empty" class="px-4 py-10 text-center text-sm text-[var(--color-fg-subtle)]">
+        {labels.empty}
+      </p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  type PagefindResultData = {
+    url: string;
+    excerpt: string;
+    meta: { title?: string };
+  };
+  type PagefindResult = { data: () => Promise<PagefindResultData> };
+  type Pagefind = {
+    debouncedSearch: (q: string) => Promise<{ results: PagefindResult[] } | null>;
+  };
+
+  let pagefind: Pagefind | null = null;
+
+  async function loadPagefind() {
+    if (pagefind) return pagefind;
+    try {
+      const url = new URL("/pagefind/pagefind.js", window.location.origin).toString();
+      pagefind = (await import(/* @vite-ignore */ url)) as Pagefind;
+      return pagefind;
+    } catch {
+      return null;
+    }
+  }
+
+  function escapeHTML(s: string) {
+    return s.replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string
+    );
+  }
+
+  function getLabels() {
+    const dlg = document.getElementById("search-dialog");
+    return {
+      empty:
+        dlg?.getAttribute("data-empty-label") ??
+        "Start typing to search posts and projects.",
+      nomatch: dlg?.getAttribute("data-nomatch-label") ?? "No matches.",
+      loading: dlg?.getAttribute("data-loading-label") ?? "Search index loading…",
+      untitled: dlg?.getAttribute("data-untitled-label") ?? "Untitled",
+    };
+  }
+
+  function renderResults(items: PagefindResultData[]) {
+    const root = document.getElementById("search-results");
+    if (!root) return;
+    const labels = getLabels();
+    if (items.length === 0) {
+      root.innerHTML = `<p class="px-4 py-10 text-center text-sm text-[var(--color-fg-subtle)]">${escapeHTML(labels.nomatch)}</p>`;
+      return;
+    }
+    root.innerHTML = items
+      .map(
+        (r) => `
+        <a href="${r.url}" class="group block px-4 py-3 rounded-lg hover:bg-[var(--color-bg)] transition-colors">
+          <p class="font-serif text-base text-[var(--color-fg)] group-hover:text-[var(--color-accent)] transition-colors">
+            ${escapeHTML(r.meta.title ?? labels.untitled)}
+          </p>
+          <p class="mt-1 text-sm text-[var(--color-fg-muted)] line-clamp-2">${r.excerpt}</p>
+        </a>`
+      )
+      .join("");
+  }
+
+  function bindSearch() {
+    const trigger = document.getElementById("search-trigger") as HTMLButtonElement | null;
+    const dialog = document.getElementById("search-dialog") as HTMLDialogElement | null;
+    const input = document.getElementById("search-input") as HTMLInputElement | null;
+    const form = document.getElementById("search-form") as HTMLFormElement | null;
+    const results = document.getElementById("search-results");
+    if (!dialog || !input || !form || !results) return;
+    if (dialog.dataset.bound) return;
+    dialog.dataset.bound = "true";
+
+    const open = async () => {
+      if (!dialog.open) dialog.showModal();
+      input.focus();
+      await loadPagefind();
+    };
+    const close = () => dialog.close();
+
+    trigger?.addEventListener("click", open);
+    form.addEventListener("submit", (e) => e.preventDefault());
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) close();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      const t = e.target as HTMLElement;
+      const inField = t && /^(INPUT|TEXTAREA)$/.test(t.tagName);
+      if (e.key === "/" && !inField && !dialog.open) {
+        e.preventDefault();
+        open();
+      }
+      if (e.key === "Escape" && dialog.open) close();
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        dialog.open ? close() : open();
+      }
+    });
+
+    input.addEventListener("input", async () => {
+      const q = input.value.trim();
+      const labels = getLabels();
+      if (!q) {
+        results.innerHTML = `<p class="px-4 py-10 text-center text-sm text-[var(--color-fg-subtle)]">${escapeHTML(labels.empty)}</p>`;
+        return;
+      }
+      const pf = await loadPagefind();
+      if (!pf) {
+        results.innerHTML = `<p class="px-4 py-10 text-center text-sm text-[var(--color-fg-subtle)]">${escapeHTML(labels.loading)}</p>`;
+        return;
+      }
+      const search = await pf.debouncedSearch(q);
+      if (!search) return;
+      const items = await Promise.all(search.results.slice(0, 8).map((r) => r.data()));
+      renderResults(items);
+    });
+  }
+
+  bindSearch();
+  document.addEventListener("astro:after-swap", bindSearch);
+</script>

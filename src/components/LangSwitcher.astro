@@ -1,0 +1,64 @@
+---
+import { getLangFromUrl, localizedPath, stripLocale } from "../i18n/utils";
+import { languages } from "../i18n/ui";
+
+const lang = getLangFromUrl(Astro.url);
+const basePath = stripLocale(Astro.url.pathname);
+
+const items = (Object.keys(languages) as Array<keyof typeof languages>).map(
+  (loc) => ({
+    code: loc,
+    label: loc.toUpperCase(),
+    full: languages[loc],
+    href: localizedPath(loc, basePath),
+    active: loc === lang,
+  })
+);
+---
+
+<div
+  class="inline-flex items-center rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-0.5 font-mono text-[10px]"
+  aria-label="Language switcher"
+>
+  {items.map((item) => (
+    <a
+      href={item.href}
+      hreflang={item.code}
+      lang={item.code}
+      aria-current={item.active ? "true" : undefined}
+      data-lang-link
+      class:list={[
+        "rounded-full px-2 py-0.5 transition-colors",
+        item.active
+          ? "bg-[var(--color-fg)] text-[var(--color-bg)]"
+          : "text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]",
+      ]}
+      title={item.full}
+    >
+      {item.label}
+    </a>
+  ))}
+</div>
+
+<script is:inline>
+  (() => {
+    const KEY = "oyoke-lang-pref";
+    function rememberLang() {
+      const path = window.location.pathname;
+      const lang = path.startsWith("/es") ? "es" : "en";
+      try { localStorage.setItem(KEY, lang); } catch (_) {}
+    }
+    document.addEventListener("click", (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("[data-lang-link]");
+      if (!link) return;
+      const href = link.getAttribute("href");
+      if (!href) return;
+      const lang = href.startsWith("/es") ? "es" : "en";
+      try { localStorage.setItem(KEY, lang); } catch (_) {}
+    });
+    rememberLang();
+    document.addEventListener("astro:after-swap", rememberLang);
+  })();
+</script>

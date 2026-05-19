@@ -1,0 +1,83 @@
+---
+import { getLangFromUrl, localizedPath, useTranslations } from "../i18n/utils";
+import type { UIKey } from "../i18n/ui";
+import Search from "./Search.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import LangSwitcher from "./LangSwitcher.astro";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const items: Array<{ href: string; labelKey: UIKey }> = [
+  { href: "/about", labelKey: "nav.about" },
+  { href: "/projects", labelKey: "nav.projects" },
+  { href: "/blog", labelKey: "nav.blog" },
+  { href: "/skills", labelKey: "nav.skills" },
+  { href: "/contact", labelKey: "nav.contact" },
+];
+
+const pathname = Astro.url.pathname;
+const isActive = (href: string) => {
+  const localized = localizedPath(lang, href);
+  if (localized === "/" || localized === "/es/") return pathname === localized;
+  return pathname.startsWith(localized);
+};
+---
+
+<header
+  id="site-header"
+  class="fixed top-0 inset-x-0 z-50 border-b border-transparent backdrop-blur-md transition-colors duration-300"
+>
+  <nav class="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+    <a href={localizedPath(lang, "/")} class="font-medium tracking-tight text-[15px]">
+      oyoke<span class="text-[var(--color-accent)]">.</span>dev
+    </a>
+
+    <ul class="hidden md:flex items-center gap-7 text-[13px]">
+      {items.map((item) => {
+        const href = localizedPath(lang, item.href);
+        return (
+          <li>
+            <a
+              href={href}
+              class:list={[
+                "transition-colors",
+                isActive(item.href)
+                  ? "text-[var(--color-fg)]"
+                  : "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]",
+              ]}
+            >
+              {t(item.labelKey)}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+
+    <div class="flex items-center gap-2">
+      <Search />
+      <LangSwitcher />
+      <ThemeToggle />
+    </div>
+  </nav>
+</header>
+
+<script>
+  function bindHeader() {
+    const header = document.getElementById("site-header");
+    if (!header) return;
+    const onScroll = () => {
+      if (window.scrollY > 8) {
+        header.classList.add("bg-[var(--color-bg)]/75");
+        header.classList.add("border-[var(--color-border)]");
+      } else {
+        header.classList.remove("bg-[var(--color-bg)]/75");
+        header.classList.remove("border-[var(--color-border)]");
+      }
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+  bindHeader();
+  document.addEventListener("astro:after-swap", bindHeader);
+</script>

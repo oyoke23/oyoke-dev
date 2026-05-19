@@ -1,0 +1,71 @@
+---
+import Base from "../../layouts/Base.astro";
+import ScrollReveal from "../../components/ScrollReveal.astro";
+import { getCollection } from "astro:content";
+import { getLangFromUrl, localizedPath, useTranslations } from "../../i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const posts = (
+  await getCollection("blog", ({ data }) => !data.draft && data.lang === lang)
+).sort((a, b) => +new Date(b.data.date) - +new Date(a.data.date));
+
+const grouped = posts.reduce<Record<string, typeof posts>>((acc, p) => {
+  const y = new Date(p.data.date).getFullYear().toString();
+  acc[y] ??= [];
+  acc[y].push(p);
+  return acc;
+}, {});
+const years = Object.keys(grouped).sort((a, b) => Number(b) - Number(a));
+
+const dateLocale = lang === "es" ? "es" : "en";
+---
+
+<Base title={t("nav.blog")} description={t("blog.body")}>
+  <ScrollReveal />
+
+  <section class="mx-auto max-w-3xl px-6 pt-12 pb-10">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-fg-subtle)] mb-4 reveal">
+      {t("blog.label")}
+    </p>
+    <h1 class="text-4xl md:text-5xl font-medium tracking-tight reveal">{t("blog.headline")}</h1>
+    <p class="mt-4 text-[15px] text-[var(--color-fg-muted)] text-pretty reveal">
+      {t("blog.body")}
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-6 pb-32 space-y-14">
+    {posts.length === 0 && (
+      <p class="text-[var(--color-fg-muted)] text-[14px]">{t("blog.empty")}</p>
+    )}
+    {years.map((y) => (
+      <div class="reveal">
+        <p class="font-mono text-[11px] text-[var(--color-fg-subtle)] mb-3">{y}</p>
+        <ul class="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+          {grouped[y].map((p) => (
+            <li>
+              <a
+                href={localizedPath(lang, `/blog/${p.data.slug}`)}
+                class="group grid grid-cols-12 gap-4 py-4 items-baseline hover:bg-[var(--color-bg-elev)]/50 px-2 -mx-2 rounded-md transition-colors"
+              >
+                <span class="col-span-3 sm:col-span-2 font-mono text-[11px] text-[var(--color-fg-subtle)]">
+                  {new Date(p.data.date).toLocaleDateString(dateLocale, {
+                    month: "short",
+                    day: "2-digit",
+                  })}
+                </span>
+                <span class="col-span-9 sm:col-span-8 text-[15px] font-medium group-hover:text-[var(--color-accent)] transition-colors">
+                  {p.data.title}
+                </span>
+                <span class="col-span-12 sm:col-span-2 text-right text-[11px] font-mono text-[var(--color-fg-subtle)]">
+                  {p.data.readingTime ?? ""} →
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+</Base>

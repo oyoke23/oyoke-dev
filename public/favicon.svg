@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="8" fill="#0a0a0a"/>
+  <text x="50%" y="56%" text-anchor="middle" dominant-baseline="middle"
+        font-family="ui-serif, Georgia, serif" font-size="18" font-weight="500" fill="#f5f3ee">o</text>
+  <circle cx="24" cy="22" r="2.2" fill="#d97546"/>
+</svg>

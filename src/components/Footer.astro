@@ -1,0 +1,110 @@
+---
+import { site } from "../lib/site";
+import { getLangFromUrl, localizedPath, useTranslations } from "../i18n/utils";
+import type { UIKey } from "../i18n/ui";
+
+const year = new Date().getFullYear();
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+
+const navItems: Array<{ href: string; labelKey: UIKey }> = [
+  { href: "/", labelKey: "nav.home" },
+  { href: "/about", labelKey: "nav.about" },
+  { href: "/projects", labelKey: "nav.projects" },
+  { href: "/blog", labelKey: "nav.blog" },
+  { href: "/skills", labelKey: "nav.skills" },
+  { href: "/contact", labelKey: "nav.contact" },
+];
+---
+
+<footer class="border-t border-[var(--color-border)] mt-32">
+  <div class="mx-auto max-w-5xl px-6 py-10 grid gap-8 md:grid-cols-3 text-[13px]">
+    <div>
+      <p class="font-medium text-[15px]">
+        oyoke<span class="text-[var(--color-accent)]">.</span>dev
+      </p>
+      <p class="mt-2 text-[var(--color-fg-muted)] max-w-xs">
+        {t("footer.tagline")}
+      </p>
+    </div>
+
+    <div>
+      <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-[var(--color-fg-subtle)] mb-3">
+        {t("footer.pages")}
+      </p>
+      <ul class="space-y-1.5">
+        {navItems.map((n) => (
+          <li>
+            <a
+              href={localizedPath(lang, n.href)}
+              class="underline-animate text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+            >
+              {t(n.labelKey)}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div>
+      <p class="font-mono text-[11px] uppercase tracking-[0.15em] text-[var(--color-fg-subtle)] mb-3">
+        {t("footer.elsewhere")}
+      </p>
+      <ul class="space-y-1.5">
+        {site.social.github && (
+          <li>
+            <a
+              href={site.social.github}
+              target="_blank"
+              rel="noreferrer"
+              class="underline-animate text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+            >
+              GitHub ↗
+            </a>
+          </li>
+        )}
+        {site.social.x && (
+          <li>
+            <a
+              href={site.social.x}
+              target="_blank"
+              rel="noreferrer"
+              class="underline-animate text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+            >
+              X / Twitter ↗
+            </a>
+          </li>
+        )}
+        {site.social.linkedin && (
+          <li>
+            <a
+              href={site.social.linkedin}
+              target="_blank"
+              rel="noreferrer"
+              class="underline-animate text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+            >
+              LinkedIn ↗
+            </a>
+          </li>
+        )}
+        {site.author.email && (
+          <li>
+            <a
+              href={`mailto:${site.author.email}`}
+              class="underline-animate text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]"
+            >
+              Email ↗
+            </a>
+          </li>
+        )}
+      </ul>
+    </div>
+  </div>
+
+  <div class="border-t border-[var(--color-border)]">
+    <div class="mx-auto max-w-5xl px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11px] text-[var(--color-fg-subtle)]">
+      <p>© {year} {site.author.name}. {t("footer.built")}</p>
+      <p class="mt-1 sm:mt-0 font-mono">v0.1</p>
+    </div>
+  </div>
+</footer>
